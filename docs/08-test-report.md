@@ -35,7 +35,7 @@
 
 | 항목 | 이유 |
 | --- | --- |
-| **무료 모드의 실제 SEC 호출**(연락처 미입력) | 파서·TTM은 실제 AAPL 응답 픽스처로, Yahoo는 실응답으로 검증. EDGAR 라이브 호출은 하지 않음 |
+| 무료 모드 재무의 **정확도 대조** | 실제 SEC·Yahoo 호출과 백테스트 완주는 확인했으나(`docs/09`), 유료 공급원 값과의 대조는 하지 않음 |
 | **LIVE 모드 전체**(실데이터 백테스트·틱, LLM 호출, 블라인드 프롬프트) | 개발 환경에 Financial Datasets / LLM 키가 없음. 코드 경로는 업스트림 `FDClient`·`CachedDataClient`·`Fund(spec, blind=True)`를 그대로 호출 |
 | LLM 사용 시 장시간 작업의 체감(수 분) | 데모 엔진은 수 초에 끝남 |
 | Safari·Firefox, 실기기 모바일 | Chromium만 실행 |

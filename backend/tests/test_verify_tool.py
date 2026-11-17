@@ -83,3 +83,26 @@ def test_balance_sheet_items_and_total_debt():
     assert balance.instant(r"total (share|stock)holders[’'] equity") == 80_000
     assert balance.instant(r"total current assets") == 150_000
     assert balance.debt() == 5_000 + 9_000 + 70_000, "both 'Term debt' rows and the commercial paper"
+
+
+def test_the_audited_statement_wins_over_the_mdna_summary():
+    """MD&A repeats revenue, operating income and net income in a short table
+    with a % change column; the reader must take the long, audited one."""
+    summary = "<table>" + cells("Revenue", "$331,839", "$281,724", "18%") + cells("Operating income", "155,237", "128,528", "21%") \
+        + cells("Net income", "133,749", "101,832", "31%") + cells("Diluted earnings per share", "$18.20", "$13.64", "33%") + "</table>"
+    statement = "<table>" + cells("Total revenue", "$331,839", "$281,724", "$245,122") + cells("Gross margin", "225,465", "193,893", "171,008") \
+        + cells("Operating income", "155,237", "128,528", "109,433") + cells("Net income", "133,749", "101,832", "88,136") \
+        + cells("Diluted", "$18.20", "$13.64", "$11.80") + cells("Other income", "1", "2", "3") + "</table>"
+    parser = v.Tables()
+    parser.feed(summary + statement + BALANCE)
+    filing = v.Filing("10-K", "2026-06-30", v.statement(parser.tables, ["net income", "operating income"]), {})
+    assert filing.flow(*v.REVENUE) == (331_839, 281_724)
+    assert filing.flow(*v.EPS, small=True) == (18.20, 13.64)
+
+
+def test_eps_row_named_diluted_earnings_per_share():
+    table = "<table>" + cells("Net income", "1", "2") + cells("Operating income", "1", "2") + cells("Diluted earnings per share", "$1.50", "$1.20") + "</table>"
+    parser = v.Tables()
+    parser.feed(table)
+    income = v.statement(parser.tables, ["net income", "operating income"])
+    assert v.pick(income, *v.EPS, small=True) == [1.50, 1.20]

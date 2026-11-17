@@ -8,8 +8,9 @@ and compares them with what the client returns for the same period.
 
     AIHF_WEB_CONTACT="Name you@example.com" uv run python tools/verify_against_filings.py [cache_dir]
 
-SEC requires a real contact in the User-Agent; it is read from the
-environment and never stored. Documents are cached in *cache_dir*.
+SEC requires a real contact in the User-Agent. It is read from AIHF_WEB_CONTACT,
+or else from the contact saved in the app's settings, and never stored by this
+script. Documents are cached in *cache_dir*.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from pathlib import Path
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app import config  # noqa: E402
 from app.engine.free.client import FreeDataClient  # noqa: E402
 
 CHECKS = [  # (ticker, cik, period end, form, filing date)  — and the 10-K its year-to-date needs
@@ -96,18 +98,26 @@ def parse_row(row: list[str]) -> tuple[str, list[float]]:
 
 
 def statement(tables, must_have: list[str]) -> dict[str, list[list[float]]]:
-    """The first table whose row labels include every phrase in *must_have*,
-    as {label: [numbers, ...]} (a label can repeat, e.g. 'Diluted')."""
+    """The statement table: of the tables whose row labels include every
+    phrase in *must_have*, the one with the most rows, as {label: [numbers,
+    ...]} (a label can repeat, e.g. 'Diluted'). The largest, because MD&A
+    repeats a few of the same lines in a short summary with a % change
+    column; the audited statement is the long one."""
+    best: tuple[int, dict[str, list[list[float]]]] | None = None
     for table in tables:
         parsed = [parse_row(row) for row in table]
         labels = " | ".join(label.lower() for label, _ in parsed)
-        if all(phrase in labels for phrase in must_have):
-            out: dict[str, list[list[float]]] = {}
-            for label, numbers in parsed:
-                if numbers:
-                    out.setdefault(label, []).append(numbers)
-            return out
-    raise LookupError(f"no table with {must_have}")
+        if not all(phrase in labels for phrase in must_have):
+            continue
+        out: dict[str, list[list[float]]] = {}
+        for label, numbers in parsed:
+            if numbers:
+                out.setdefault(label, []).append(numbers)
+        if best is None or len(out) > best[0]:
+            best = (len(out), out)
+    if best is None:
+        raise LookupError(f"no table with {must_have}")
+    return best[1]
 
 
 def pick(table, *patterns: str, small: bool = False) -> list[float] | None:
@@ -200,7 +210,7 @@ REVENUE = (r"total net sales", r"total revenue", r"net sales", r"revenue")
 GROSS = (r"gross margin", r"gross profit")
 OPERATING = (r"operating income",)
 NET = (r"net income",)
-EPS = (r"diluted",)
+EPS = (r"diluted", r"diluted earnings per share")
 
 
 def ttm_from_filings(this: Filing, base_10k: Filing | None, *patterns, small=False) -> float | None:
@@ -260,9 +270,11 @@ def compare(client: FreeDataClient, fetcher: Fetcher, ticker: str, cik: int, per
 
 
 def main() -> int:
-    contact = os.environ.get("AIHF_WEB_CONTACT", "")
+    # The environment wins; otherwise the contact saved in the app's settings
+    # (Settings > SEC contact, kept in $AIHF_WEB_HOME/web-settings.json).
+    contact = os.environ.get("AIHF_WEB_CONTACT") or config.get_contact()
     if "@" not in contact:
-        print("Set AIHF_WEB_CONTACT to a real contact (Name you@example.com): SEC requires it.", file=sys.stderr)
+        print("No contact: set AIHF_WEB_CONTACT or save one in the app's settings (SEC requires a real contact).", file=sys.stderr)
         return 2
     cache = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/tmp/aihf-verify")
     client = FreeDataClient(contact, cache / "client")

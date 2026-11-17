@@ -6,7 +6,8 @@
 
 | 층 | 명령 | 결과 |
 | --- | --- | --- |
-| 백엔드 | `cd backend && uv run pytest` | **38 passed** (약 5초, 무료 데이터 13건 포함) |
+| 백엔드 | `cd backend && uv run pytest` | **45 passed** (약 5초, 무료 데이터·대조 도구 20건 포함) |
+| 공시 원문 대조 | `tools/verify_against_filings.py` | **40 / 40 일치** (AAPL·MSFT, 10-K·10-Q) |
 | 프런트 | `cd frontend && npm run build` | 타입체크 통과, 번들 314 kB (gzip 98 kB) |
 | E2E | `node e2e/smoke.mjs` | **27 / 27 checks passed**, 서버 5xx 0건 |
 
@@ -35,7 +36,7 @@
 
 | 항목 | 이유 |
 | --- | --- |
-| 무료 모드 재무의 **정확도 대조** | 실제 SEC·Yahoo 호출과 백테스트 완주는 확인했으나(`docs/09`), 유료 공급원 값과의 대조는 하지 않음 |
+| 무료 모드의 **표본 범위** | 공시 원문 대조는 2개 회사·5개 기간 40/40 일치(`docs/10`). 은행·보험 등 다른 업종, 시세·시총·P/E의 독립 대조는 하지 않음 |
 | **LIVE 모드 전체**(실데이터 백테스트·틱, LLM 호출, 블라인드 프롬프트) | 개발 환경에 Financial Datasets / LLM 키가 없음. 코드 경로는 업스트림 `FDClient`·`CachedDataClient`·`Fund(spec, blind=True)`를 그대로 호출 |
 | LLM 사용 시 장시간 작업의 체감(수 분) | 데모 엔진은 수 초에 끝남 |
 | Safari·Firefox, 실기기 모바일 | Chromium만 실행 |

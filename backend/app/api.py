@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import time
 from importlib.metadata import version
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from app import config
+from app.auth import COOKIE, TTL_SECONDS, FAILED_LOGIN_DELAY
 from app.engine import Workspace, workspace_for
 from app.jobs import queue
 from app.services import backtests, catalog, funds, mandates, settings
@@ -41,6 +43,38 @@ def call(fn, *args, **kwargs):
         return fn(*args, **kwargs)
     except (*NOT_FOUND, *CONFLICT, *BAD_REQUEST) as exc:
         raise http_error(exc) from exc
+
+
+# ---- login ------------------------------------------------------------------
+
+class LoginBody(BaseModel):
+    password: str = Field(max_length=500)
+
+
+@router.get("/auth/status")
+def auth_status(request: Request) -> dict[str, Any]:
+    auth = request.app.state.auth
+    return {"required": auth.required, "authenticated": auth.valid(request.cookies.get(COOKIE))}
+
+
+@router.post("/auth/login")
+def login(body: LoginBody, request: Request, response: Response) -> dict[str, Any]:
+    auth = request.app.state.auth
+    if not auth.required:
+        return {"required": False, "authenticated": True}
+    if not auth.check_password(body.password):
+        time.sleep(FAILED_LOGIN_DELAY)
+        raise HTTPException(401, "비밀번호가 맞지 않습니다.")
+    response.set_cookie(
+        COOKIE, auth.issue(), max_age=TTL_SECONDS, httponly=True, samesite="lax", secure=auth.secure_cookie,
+    )
+    return {"required": True, "authenticated": True}
+
+
+@router.post("/auth/logout")
+def logout(response: Response) -> dict[str, Any]:
+    response.delete_cookie(COOKIE, httponly=True, samesite="lax")
+    return {"authenticated": False}
 
 
 # ---- status & settings ------------------------------------------------------

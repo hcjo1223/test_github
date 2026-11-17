@@ -6,7 +6,7 @@
 
 | 층 | 명령 | 결과 |
 | --- | --- | --- |
-| 백엔드 | `cd backend && uv run pytest` | **45 passed** (약 5초, 무료 데이터·대조 도구 20건 포함) |
+| 백엔드 | `cd backend && uv run pytest` | **54 passed** (약 7초, 무료 데이터·대조 도구·로그인 9건 포함) |
 | 공시 원문 대조 | `tools/verify_against_filings.py` | **40 / 40 일치** (AAPL·MSFT, 10-K·10-Q) |
 | 프런트 | `cd frontend && npm run build` | 타입체크 통과, 번들 314 kB (gzip 98 kB) |
 | E2E | `node e2e/smoke.mjs` | **27 / 27 checks passed**, 서버 5xx 0건 |

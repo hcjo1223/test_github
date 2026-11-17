@@ -316,6 +316,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   } catch {
     throw new ApiError(0, "서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인하세요.");
   }
+  // A session expired mid-use: let the app show the login page again.
+  if (response.status === 401 && !path.startsWith("/auth/")) {
+    window.dispatchEvent(new Event("aihf:unauthorized"));
+  }
   if (response.status === 204) return undefined as T;
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
@@ -334,6 +338,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 const enc = encodeURIComponent;
 
 export const api = {
+  authStatus: () => request<{ required: boolean; authenticated: boolean }>("GET", "/auth/status"),
+  login: (password: string) => request<{ required: boolean; authenticated: boolean }>("POST", "/auth/login", { password }),
+  logout: () => request<{ authenticated: boolean }>("POST", "/auth/logout"),
+
   settings: () => request<Settings>("GET", "/settings"),
   updateSettings: (body: { mode?: Mode; model?: string; contact?: string }) => request<Settings>("PUT", "/settings", body),
   saveCredential: (env_var: string, value: string) =>

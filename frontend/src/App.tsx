@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { NavLink, Route, Routes } from "react-router-dom";
 import { api, type Settings } from "./api";
 import { ErrorNote, Loading, ModeBadge } from "./components/common";
@@ -6,6 +6,7 @@ import { useLoad } from "./hooks";
 import { BacktestReportPage } from "./pages/BacktestReport";
 import { BacktestsPage } from "./pages/Backtests";
 import { DashboardPage } from "./pages/Dashboard";
+import { LoginPage } from "./pages/Login";
 import { FundConsolePage } from "./pages/FundConsole";
 import { FundsPage } from "./pages/Funds";
 import { MandateBuilderPage } from "./pages/MandateBuilder";
@@ -33,7 +34,7 @@ const NAV = [
   { to: "/settings", label: "설정" },
 ];
 
-export function App() {
+function Shell({ onLogout }: { onLogout?: () => void }) {
   const settings = useLoad(api.settings, []);
 
   return (
@@ -52,6 +53,11 @@ export function App() {
         </nav>
         <div className="foot">
           {settings.data && <ModeBadge mode={settings.data.mode} />}
+          {onLogout && (
+            <button className="small" onClick={onLogout} style={{ marginTop: 10 }}>
+              로그아웃
+            </button>
+          )}
           <p style={{ marginTop: 8 }}>교육·연구 목적 전용. 실제 주문을 내지 않으며 투자 자문이 아닙니다.</p>
         </div>
       </aside>
@@ -78,4 +84,33 @@ export function App() {
       </main>
     </div>
   );
+}
+
+/** Gate: the login page until the server confirms a session (or says none is needed). */
+export function App() {
+  const auth = useLoad(api.authStatus, []);
+
+  useEffect(() => {
+    const expired = () => auth.reload();
+    window.addEventListener("aihf:unauthorized", expired);
+    return () => window.removeEventListener("aihf:unauthorized", expired);
+  }, [auth.reload]);
+
+  if (auth.error) {
+    return (
+      <div className="main">
+        <ErrorNote message={auth.error} />
+      </div>
+    );
+  }
+  if (!auth.data) return <div className="main"><Loading /></div>;
+  if (auth.data.required && !auth.data.authenticated) return <LoginPage onDone={auth.reload} />;
+
+  const logout = auth.data.required
+    ? async () => {
+        await api.logout();
+        auth.reload();
+      }
+    : undefined;
+  return <Shell onLogout={logout} />;
 }

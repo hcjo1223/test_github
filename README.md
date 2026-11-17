@@ -61,7 +61,7 @@ SEC는 자동화 클라이언트가 실제 연락처로 자신을 밝히고 초�
 ## 테스트
 
 ```bash
-cd backend && uv run pytest                 # API·데모·무료 데이터 45건
+cd backend && uv run pytest                 # API·데모·무료 데이터·로그인 54건
 cd frontend && npm run build                # 타입체크 + 번들
 # E2E (Playwright 필요, 빈 홈 디렉터리에서 서버를 띄운 뒤)
 AIHF_WEB_HOME=$(mktemp -d) uv run --project backend uvicorn app.main:app --app-dir backend &
@@ -82,6 +82,7 @@ node e2e/smoke.mjs
 | [08 검증 리포트](docs/08-test-report.md) | 테스트 결과와 미검증 항목 |
 | [09 무료 데이터 어댑터](docs/09-free-data-adapter.md) | EDGAR + Yahoo 모드의 설계와 한계 |
 | [10 무료 데이터 정확도 검증](docs/10-free-data-verification.md) | 공시 원문 대조 결과(40/40)와 커버리지 한계 |
+| [11 배포](docs/11-deployment.md) | 본인 전용 비공개 배포: 도커, 비밀번호, 볼륨, 보안 점검표 |
 
 ## 라이선스
 

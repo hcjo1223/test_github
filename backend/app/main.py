@@ -15,15 +15,20 @@ warnings.filterwarnings("ignore", message="Importing verbose from langchain root
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from app import config  # noqa: E402
+from app.auth import COOKIE, from_env  # noqa: E402
 from app.api import router  # noqa: E402
 from app.services import settings  # noqa: E402
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+# Reachable without a login. The UI itself is public (it holds no data);
+# the login page is part of it. Everything under /api needs a session.
+OPEN_API_PATHS = {"/api/health", "/api/auth/status", "/api/auth/login", "/api/auth/logout"}
 
 
 def create_app() -> FastAPI:
@@ -35,6 +40,17 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware, allow_origins=DEV_ORIGINS, allow_methods=["*"], allow_headers=["*"],
     )
+    app.state.auth = from_env()  # raises at startup on a bad or missing password
+
+    @app.middleware("http")
+    async def require_login(request, call_next):
+        path = request.url.path
+        auth = request.app.state.auth
+        if path.startswith("/api/") and path not in OPEN_API_PATHS:
+            if not auth.valid(request.cookies.get(COOKIE)):
+                return JSONResponse({"detail": "로그인이 필요합니다."}, status_code=401)
+        return await call_next(request)
+
     app.include_router(router)
 
     if FRONTEND_DIST.is_dir():

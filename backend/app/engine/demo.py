@@ -33,6 +33,7 @@ DEMO_MODEL = "demo-heuristic"
 
 _EPOCH = date(2012, 1, 2)          # a Monday; every series starts here
 _HORIZON = date(2040, 12, 31)      # series are generated to here, then cut at "today"
+_ANCHOR = date(2025, 1, 2)         # every ticker trades between $20 and $300 on this day
 _FILING_LAG_DAYS = 35              # metrics become public this long after quarter end
 _EARNINGS_LAG_DAYS = 30            # the 8-K lands a little before the 10-Q
 
@@ -84,8 +85,13 @@ def _series(ticker: str) -> tuple[np.ndarray, np.ndarray]:
         drift = rng.uniform(-0.0002, 0.0005)
         sigma = rng.uniform(0.008, 0.022)
     returns = beta * market + drift + rng.normal(0.0, sigma, len(market))
-    start = rng.uniform(20.0, 300.0)
-    closes = start * np.exp(np.cumsum(returns))
+    # Pin the level at a recent anchor date rather than at the epoch: fourteen
+    # years of compounding from a random start gives share prices in the
+    # tens of thousands, and a fund that can afford one share of a name.
+    level = rng.uniform(20.0, 300.0)
+    path = np.cumsum(returns)
+    anchor = int(np.searchsorted(_ordinals(), _ANCHOR.toordinal()))
+    closes = level * np.exp(path - path[anchor])
     volumes = rng.uniform(0.6, 1.4, len(market)) * rng.uniform(2e6, 6e7)
     return closes, volumes
 

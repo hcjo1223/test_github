@@ -43,7 +43,7 @@ def create_app() -> FastAPI:
         @app.get("/{path:path}", include_in_schema=False)
         def spa(path: str) -> FileResponse:
             """Serve the built UI; unknown paths get index.html for client routing."""
-            if path.startswith("api/"):
+            if path == "api" or path.startswith("api/"):
                 raise HTTPException(404, "Not found")
             target = (FRONTEND_DIST / path).resolve()
             if path and target.is_file() and FRONTEND_DIST in target.parents:

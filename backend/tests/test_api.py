@@ -228,3 +228,13 @@ def test_unknown_fund_is_404(client):
 def test_demo_and_live_workspaces_are_separate(client, mandate, home):
     assert (home / "web-demo" / "mandates" / "test-fund.yaml").is_file()
     assert not (home / "mandates" / "test-fund.yaml").exists()
+
+
+def test_first_requests_can_arrive_together(client):
+    """A page fires several requests at once into a home that does not exist yet."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    paths = ["/api/mandates", "/api/backtests", "/api/funds"] * 8
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        statuses = list(pool.map(lambda path: client.get(path).status_code, paths))
+    assert set(statuses) == {200}

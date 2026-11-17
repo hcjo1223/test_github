@@ -38,11 +38,27 @@ export function Loading({ what = "불러오는 중" }: { what?: string }) {
 }
 
 export function ModeBadge({ mode }: { mode: Mode }) {
-  return <span className={`badge ${mode}`}>{mode === "demo" ? "DEMO · 합성 데이터" : "LIVE"}</span>;
+  const label = { demo: "DEMO · 합성 데이터", free: "FREE · 무료 데이터", live: "LIVE" }[mode];
+  return <span className={`badge ${mode}`}>{label}</span>;
 }
 
-export function DemoNote({ mode }: { mode: Mode }) {
-  if (mode !== "demo") return null;
+/** The caveat that goes with a mode's data. `notes` come from the server for a
+ * specific result; without them a short general line is shown. */
+export function DemoNote({ mode, notes }: { mode: Mode; notes?: string[] }) {
+  if (mode === "live") return null;
+  if (mode === "free") {
+    const lines = notes?.length ? notes : ["무료 데이터(SEC EDGAR + Yahoo)입니다. 탐색용이며 재구성된 근사값이 섞여 있습니다. 설정에서 자세한 한계를 확인하세요."];
+    return (
+      <div className="notice">
+        <strong>무료 데이터 모드 · 탐색용</strong>
+        <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+          {lines.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   return (
     <div className="notice">
       데모 모드입니다. 시세·재무는 합성 데이터이고 애널리스트 논거는 규칙 기반 휴리스틱입니다. 수익률은 전략의 성과를

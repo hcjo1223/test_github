@@ -26,7 +26,7 @@ export function BacktestReportPage() {
           </>
         }
       />
-      <DemoNote mode={r.mode} />
+      <DemoNote mode={r.mode} notes={r.notes} />
 
       <div className="kpis">
         <Kpi label="총수익률" value={signedPct(m.total_return_pct)} tone={tone(m.total_return_pct)} sub={`연환산 ${signedPct(m.annualized_return_pct)}`} />

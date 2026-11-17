@@ -21,6 +21,7 @@ from hedge_fund.tui.shared import BACKTEST_DAYS
 from app.engine import LiveNotReady, Workspace, runtime_for
 from app.jobs import Job, JobError
 from app.services import views
+from app.services.notes import data_notes
 from app.services.names import safe_name
 
 
@@ -133,6 +134,7 @@ def report(ws: Workspace, backtest_id: str) -> dict[str, Any]:
         "rebalance": result.rebalance,
         "capital": result.capital,
         "llm_model": last.llm_model,
+        "notes": data_notes(ws.mode, last.decision.spec if last.decision else None, last.llm_model == "demo-heuristic"),
         "metrics": result.metrics.model_dump(),
         "dates": result.dates,
         "nav": result.nav,

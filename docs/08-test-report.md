@@ -6,9 +6,9 @@
 
 | 층 | 명령 | 결과 |
 | --- | --- | --- |
-| 백엔드 | `cd backend && uv run pytest` | **25 passed** (약 4초) |
+| 백엔드 | `cd backend && uv run pytest` | **38 passed** (약 5초, 무료 데이터 13건 포함) |
 | 프런트 | `cd frontend && npm run build` | 타입체크 통과, 번들 314 kB (gzip 98 kB) |
-| E2E | `node e2e/smoke.mjs` | **22 / 22 checks passed**, 서버 5xx 0건 |
+| E2E | `node e2e/smoke.mjs` | **27 / 27 checks passed**, 서버 5xx 0건 |
 
 ## 백엔드 테스트 범위 (25건)
 
@@ -35,6 +35,7 @@
 
 | 항목 | 이유 |
 | --- | --- |
+| **무료 모드의 실제 SEC 호출**(연락처 미입력) | 파서·TTM은 실제 AAPL 응답 픽스처로, Yahoo는 실응답으로 검증. EDGAR 라이브 호출은 하지 않음 |
 | **LIVE 모드 전체**(실데이터 백테스트·틱, LLM 호출, 블라인드 프롬프트) | 개발 환경에 Financial Datasets / LLM 키가 없음. 코드 경로는 업스트림 `FDClient`·`CachedDataClient`·`Fund(spec, blind=True)`를 그대로 호출 |
 | LLM 사용 시 장시간 작업의 체감(수 분) | 데모 엔진은 수 초에 끝남 |
 | Safari·Firefox, 실기기 모바일 | Chromium만 실행 |

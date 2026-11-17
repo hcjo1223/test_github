@@ -22,6 +22,7 @@ from hedge_fund.scorecard import score
 from app.engine import LiveNotReady, Workspace, runtime_for
 from app.jobs import Job, JobError
 from app.services import views
+from app.services.notes import data_notes
 from app.services.names import safe_name
 
 MAX_TICKS = 60
@@ -118,6 +119,7 @@ def detail(ws: Workspace, name: str) -> dict[str, Any]:
         "cash": latest.cash if latest else capital,
         "pending": views.decision_view(latest.decision) if latest and latest.decision else None,
         "llm_model": latest.llm_model if latest else None,
+        "notes": data_notes(ws.mode, deployed.spec, runtime_for(ws).demo_llm),
         "events": list(reversed(ledger.events()[-EVENTS_SHOWN:])),
     }
 

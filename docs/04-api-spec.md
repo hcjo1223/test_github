@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | GET | `/health` | `{status, version, aihf_version, mode}` |
 | GET | `/settings` | 모드, 모델, 키 등록 현황(마스킹), live 가능 여부와 막는 이유 |
-| PUT | `/settings` | `{mode?, model?}` — live 전환은 데이터 키 필요(400) |
+| PUT | `/settings` | `{mode?, model?, contact?}` — live는 데이터 키, free는 SEC 연락처(이메일) 필요(400) |
 | PUT | `/settings/credentials` | `{env_var, value}` — 허용된 환경변수 이름만 |
 | GET | `/catalog` | 애널리스트·전략 라이브러리·모델·유니버스 프리셋·기본값 |
 

@@ -13,6 +13,7 @@
 - **백테스트** — 진행률과 함께 실행, 벤치마크 대비 수익·낙폭 곡선, 세션별 애널리스트 논거·비중·체결 드릴다운, 성적표
 - **페이퍼 트레이딩** — 맨데이트를 펀드로 배치, 체결될 결정을 확인(승인)한 뒤 한 세션씩 전진, 밀린 세션 따라잡기, 킬 스위치
 - **데모 모드** — API 키 없이 전 기능 동작(합성 시세·재무 + 규칙 기반 애널리스트). 화면과 기록에 항상 DEMO/`[demo]` 표기
+- **무료 데이터 모드(탐색용)** — 실제 종목을 무료 소스로 돌려 본다: SEC EDGAR 재무(공시일 기준 시점 정합) + Yahoo 시세. LLM 키가 없으면 규칙 기반 애널리스트로 동작
 
 ## 빠른 시작
 
@@ -30,6 +31,20 @@ cd backend && uv sync && uv run uvicorn app.main:app --host 127.0.0.1 --port 800
 
 개발 중에는 `cd frontend && npm run dev`(포트 5173, `/api`는 8000으로 프록시).
 
+### 무료 데이터 모드
+
+유료 키 없이 실제 종목을 돌려 보는 탐색용 모드다. 설정에서 **SEC 연락처(이메일)** 를 입력하면 켤 수 있다.
+SEC는 자동화 클라이언트가 실제 연락처로 자신을 밝히고 초당 10회 이하로 요청하길 요구한다(앱이 요청 간격을 지키며, 가짜 주소는 쓰지 말 것).
+
+| 항목 | 내용 |
+| --- | --- |
+| 재무 | SEC EDGAR XBRL. 항목마다 공시일이 있어 "그날 공개된 값"만 보인다. 태그로 TTM을 재구성한 **근사값**이며 회사마다 결측이 있다 |
+| 시세 | Yahoo 차트 엔드포인트(비공식). 분할 조정, 배당 미조정. 예고 없이 바뀌거나 제한될 수 있다 |
+| 한계 | 애널리스트 추정치가 없어 **PEAD는 신호가 없다**. 뉴스·내부자 거래·스크리너 없음. 섹터는 SIC 기반의 거친 분류 |
+| 애널리스트 | 선택한 모델의 키가 있으면 실제 LLM, 없으면 규칙 기반(`[demo]`). 어느 쪽인지 리포트에 표기 |
+
+결과는 탐색용이다. 재구성된 재무와 비공식 시세는 성과 근거로 쓰기에 충분히 검증되지 않았다.
+
 ### LIVE 모드
 
 설정 화면에서 Financial Datasets 키와 LLM 제공사 키를 등록하고 모드를 LIVE로 바꾼다. 키는 업스트림과 같은
@@ -46,7 +61,7 @@ cd backend && uv sync && uv run uvicorn app.main:app --host 127.0.0.1 --port 800
 ## 테스트
 
 ```bash
-cd backend && uv run pytest                 # API·데모 엔진 25건
+cd backend && uv run pytest                 # API·데모·무료 데이터 38건
 cd frontend && npm run build                # 타입체크 + 번들
 # E2E (Playwright 필요, 빈 홈 디렉터리에서 서버를 띄운 뒤)
 AIHF_WEB_HOME=$(mktemp -d) uv run --project backend uvicorn app.main:app --app-dir backend &
@@ -65,6 +80,7 @@ node e2e/smoke.mjs
 | [06 개발 계획](docs/06-development-plan.md) | 단계, 작업 분해, 테스트 전략 |
 | [07 개발 일지](docs/07-dev-log.md) | 진행 기록과 결정, 잡은 문제 |
 | [08 검증 리포트](docs/08-test-report.md) | 테스트 결과와 미검증 항목 |
+| [09 무료 데이터 어댑터](docs/09-free-data-adapter.md) | EDGAR + Yahoo 모드의 설계와 한계 |
 
 ## 라이선스
 

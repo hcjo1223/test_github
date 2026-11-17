@@ -21,6 +21,7 @@ from hedge_fund.tui.keys import missing_key
 
 from app import config
 from app.engine.demo import DEMO_MODEL, DemoDataClient, DemoLLM
+from app.engine.free.client import FreeDataClient, valid_contact
 from app.engine.workspace import Workspace
 
 # A new demo fund starts this far in the past, so its sessions can be
@@ -48,12 +49,25 @@ class Runtime:
         return self.workspace.mode
 
     @property
+    def demo_llm(self) -> bool:
+        """Whether the investor agents are the rule-based stand-in. Always in
+        demo mode; in free mode only while the selected model has no key, so
+        free data can be used with no paid service at all."""
+        if self.mode == "demo":
+            return True
+        return self.mode == "free" and missing_key(provider_for(config.get_model()) or "Anthropic") is not None
+
+    @property
     def llm_model(self) -> str:
-        return DEMO_MODEL if self.mode == "demo" else config.get_model()
+        return DEMO_MODEL if self.demo_llm else config.get_model()
 
     def check_ready(self, spec: FundSpec) -> None:
         """Raise LiveNotReady, naming what is missing, before any work starts."""
         if self.mode == "demo":
+            return
+        if self.mode == "free":
+            if not valid_contact(config.get_contact()):
+                raise LiveNotReady("무료 데이터 모드에는 SEC가 요구하는 연락처(이메일)가 필요합니다. 설정에서 입력하세요.")
             return
         if not has_data_credential():
             raise LiveNotReady("FINANCIAL_DATASETS_API_KEY가 없습니다. 설정에서 등록하거나 데모 모드로 전환하세요.")
@@ -75,6 +89,8 @@ class Runtime:
         try:
             if self.mode == "demo":
                 yield DemoDataClient()
+            elif self.mode == "free":
+                yield FreeDataClient(config.get_contact(), self.workspace.cache / "free")
             else:
                 with FDClient() as raw:
                     yield CachedDataClient(raw)
@@ -88,12 +104,12 @@ class Runtime:
         """Staff a fund for a backtest. Live backtests blind the agents'
         prompts, as the aihf CLI does: the LLM may remember what a named
         company did over the window."""
-        if self.mode == "demo":
+        if self.demo_llm:
             return self._demo_fund(spec)
         return Fund(spec, blind=True)
 
     def paper_fund(self, spec: FundSpec) -> Fund:
-        if self.mode == "demo":
+        if self.demo_llm:
             return self._demo_fund(spec)
         return Fund(spec)
 

@@ -59,11 +59,12 @@ def get_settings() -> dict[str, Any]:
 class SettingsUpdate(BaseModel):
     mode: str | None = None
     model: str | None = None
+    contact: str | None = Field(default=None, max_length=200)
 
 
 @router.put("/settings")
 def put_settings(body: SettingsUpdate) -> dict[str, Any]:
-    return call(settings.update, body.mode, body.model)
+    return call(settings.update, body.mode, body.model, body.contact)
 
 
 class Credential(BaseModel):

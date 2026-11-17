@@ -27,8 +27,9 @@ const seen = (locator) => locator.first().waitFor({ timeout: 8000 }).then(() => 
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
 const page = await context.newPage();
-// The duplicate-name step expects a 409; any other console error is a problem.
-page.on("console", (m) => m.type() === "error" && !m.text().includes("409") && problems.push(`console: ${m.text()}`));
+// Two steps provoke refusals on purpose (a duplicate name: 409, a contact without
+// an email: 400). Any other console error is a problem.
+page.on("console", (m) => m.type() === "error" && !/status of (409|400)/.test(m.text()) && problems.push(`console: ${m.text()}`));
 page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
 const shot = async (name, fullPage = true) => shots && page.screenshot({ path: `${shots}/${name}.png`, fullPage });
 
@@ -116,6 +117,21 @@ try {
   // 5. Settings: live is locked without a data key.
   await page.goto(`${base}/settings`);
   check(await page.getByRole("button", { name: /^LIVE/ }).isDisabled(), "LIVE is disabled without a data key");
+  check(await page.getByRole("button", { name: /^무료 데이터/ }).isDisabled(), "free mode is disabled without a contact");
+  // The contact only gates the mode here; nothing in this script calls SEC.
+  await page.getByPlaceholder("이름 name@example.com").fill("no-email");
+  await page.getByRole("button", { name: "저장", exact: true }).first().click();
+  check(await seen(page.getByRole("alert").filter({ hasText: "이메일" })), "a contact without an email is refused");
+  await page.getByPlaceholder("이름 name@example.com").fill("E2E Tester e2e@example.org");
+  await page.getByRole("button", { name: "저장", exact: true }).first().click();
+  await page.getByRole("status").filter({ hasText: "연락처를 저장" }).waitFor();
+  await page.getByRole("button", { name: /^무료 데이터/ }).click();
+  check(await seen(page.locator(".sidebar .badge.free")), "switching to free mode shows the FREE badge");
+  await page.goto(`${base}/backtests`);
+  check(await seen(page.getByText("무료 데이터 모드 · 탐색용")), "free mode carries its caveat on the backtest page");
+  await page.goto(`${base}/settings`);
+  await page.getByRole("button", { name: /^데모/ }).click();
+  check(await seen(page.locator(".sidebar .badge.demo")), "and back to demo");
   await shot("06-settings");
 
   // 6. Dashboard reflects the work; phone width does not scroll sideways.

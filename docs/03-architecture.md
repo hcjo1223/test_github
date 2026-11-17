@@ -44,6 +44,8 @@
 | LLM 에이전트 | `DemoLLM` — 프롬프트의 재무 지표를 읽어 페르소나별 규칙으로 JSON 응답, 논거에 `[demo]` 접두 | `make_llm()` (선택 모델, 업스트림 그대로) |
 | 백테스트 블라인드 | 미사용(외부 breakpoints 다운로드 불필요) | `Fund(spec, blind=True)` |
 | 저장소 | `~/.hedge-fund/web-demo/` | `~/.hedge-fund/` |
+
+세 번째 모드 **free**(탐색용)는 데이터만 live와 다르다: `FreeDataClient`(`engine/free/` — SEC EDGAR 재무 + Yahoo 시세), 저장소 `~/.hedge-fund/web-free/`. 에이전트는 모델 키가 있으면 실제 LLM, 없으면 `DemoLLM`. 한계(PEAD 무신호 등)는 리포트의 `notes`로 항상 함께 내려간다.
 | 페이퍼 첫 세션 | 90일 전으로 백데이트(바로 여러 세션 체험) | 가장 최근 완료 세션(업스트림 동작) |
 
 모드와 선택 모델은 `~/.hedge-fund/web-settings.json`에 저장한다. 환경변수 `AIHF_WEB_HOME`으로 루트를 바꿀 수 있다(테스트가 사용).

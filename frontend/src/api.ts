@@ -1,12 +1,16 @@
 // Types mirror the backend's view models (docs/04-api-spec.md).
 
-export type Mode = "demo" | "live";
+export type Mode = "demo" | "free" | "live";
 
 export interface Settings {
   mode: Mode;
   model: string;
   live_ready: boolean;
   live_blockers: string[];
+  free_ready: boolean;
+  free_blockers: string[];
+  free_uses_demo_llm: boolean;
+  contact: string | null;
   llm_warning: string | null;
   credentials: { env_var: string; label: string; set: boolean; masked: string | null }[];
 }
@@ -160,6 +164,7 @@ export interface BacktestReport {
   rebalance: string;
   capital: number;
   llm_model: string | null;
+  notes: string[];
   metrics: Metrics;
   dates: string[];
   nav: number[];
@@ -268,6 +273,7 @@ export interface FundDetail extends FundRow {
   cash: number;
   pending: Decision | null;
   llm_model: string | null;
+  notes: string[];
   events: { time: string; kind: string; [key: string]: unknown }[];
 }
 
@@ -329,7 +335,7 @@ const enc = encodeURIComponent;
 
 export const api = {
   settings: () => request<Settings>("GET", "/settings"),
-  updateSettings: (body: { mode?: Mode; model?: string }) => request<Settings>("PUT", "/settings", body),
+  updateSettings: (body: { mode?: Mode; model?: string; contact?: string }) => request<Settings>("PUT", "/settings", body),
   saveCredential: (env_var: string, value: string) =>
     request<Settings>("PUT", "/settings/credentials", { env_var, value }),
   catalog: () => request<Catalog>("GET", "/catalog"),

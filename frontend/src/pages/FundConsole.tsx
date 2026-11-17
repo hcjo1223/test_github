@@ -107,7 +107,7 @@ export function FundConsolePage() {
         )}
       </PageHead>
 
-      <DemoNote mode={f.mode} />
+      <DemoNote mode={f.mode} notes={f.notes} />
       {f.halted && <div className="notice error">정지 사유: {f.halted}</div>}
       {f.intraday && <div className="notice">분 단위 펀드는 웹에서 실행할 수 없습니다. 터미널에서 <code>aihf paper run {f.name}</code>을 사용하세요.</div>}
       <ErrorNote message={error} />

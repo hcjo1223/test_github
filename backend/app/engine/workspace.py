@@ -17,6 +17,7 @@ from hedge_fund import paths
 from app import config
 
 DEMO_SUBDIR = "web-demo"
+FREE_SUBDIR = "web-free"
 _ensure_lock = threading.Lock()
 
 
@@ -56,5 +57,5 @@ class Workspace:
 
 def workspace_for(mode: config.Mode | None = None) -> Workspace:
     mode = mode or config.get_mode()
-    root = config.home() / DEMO_SUBDIR if mode == "demo" else config.home()
+    root = {"demo": config.home() / DEMO_SUBDIR, "free": config.home() / FREE_SUBDIR}.get(mode, config.home())
     return Workspace(mode=mode, root=root).ensure()

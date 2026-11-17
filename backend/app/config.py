@@ -15,7 +15,7 @@ from hedge_fund import paths
 from hedge_fund.data import has_data_credential
 from hedge_fund.llm import DEFAULT_MODEL
 
-Mode = Literal["demo", "live"]
+Mode = Literal["demo", "free", "live"]
 APP_VERSION = "0.1.0"
 SETTINGS_FILE = "web-settings.json"
 
@@ -42,7 +42,7 @@ def _write(data: dict) -> None:
 def get_mode() -> Mode:
     """The saved mode; without one, live only when a data key exists."""
     saved = _read().get("mode")
-    if saved in ("demo", "live"):
+    if saved in ("demo", "free", "live"):
         return saved
     return "live" if has_data_credential() else "demo"
 
@@ -58,3 +58,12 @@ def get_model() -> str:
 def set_model(model: str) -> None:
     _write({**_read(), "model": model})
     os.environ["HEDGE_FUND_LLM_MODEL"] = model
+
+
+def get_contact() -> str:
+    """The contact SEC EDGAR requires of automated clients (free mode)."""
+    return _read().get("contact") or os.environ.get("AIHF_WEB_CONTACT", "")
+
+
+def set_contact(contact: str) -> None:
+    _write({**_read(), "contact": contact})
